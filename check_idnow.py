@@ -12,7 +12,7 @@
 #
 ###############################################################################
 
-__author__ = 'Your Name Here'
+__author__ = 'Gregor Tudan'
 __version__= 0.1
 
 from argparse import ArgumentParser
@@ -47,8 +47,12 @@ def parse_args():
 
     ## CLI arguments specific to this script
     group = parser.add_argument_group(parser,'Plugin Options')
-    group.add_argument('-x', '--extra', help='Your option here',
-                     default=None)
+    group.add_argument('-i', '--customer-id', help='IDNow Customer id',
+                       default=None, dest='customer_id')
+    group.add_argument('-k', '--api-key', help='Your IDNow API key',
+                       default=None, dest='api_key')
+    group.add_argument('-h', '--gateway-host', help='The hostname of the idnow gateway server',
+            default='gateway.idnow.de', dest='hostname')
     
     ## Common CLI arguments
     parser.add_argument('-c', '--critical', help='Set the critical threshold. Default: %(default)s',
