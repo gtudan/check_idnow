@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 ###############################################################################
 # Nagios plugin template 
@@ -17,6 +17,7 @@ __version__= 0.1
 
 from argparse import ArgumentParser
 import logging as log
+import requests
 
 def main():
     """ Main plugin logic goes here """
@@ -32,6 +33,7 @@ def main():
     # log.critical('critical message')
     # log.fatal('fatal message')
 
+    get_waiting_time(args)
     gtfo(0)
 
 
@@ -51,7 +53,7 @@ def parse_args():
                        default=None, dest='customer_id')
     group.add_argument('-k', '--api-key', help='Your IDNow API key',
                        default=None, dest='api_key')
-    group.add_argument('-h', '--gateway-host', help='The hostname of the idnow gateway server',
+    group.add_argument('-g', '--gateway-host', help='The hostname of the idnow gateway server',
             default='gateway.idnow.de', dest='hostname')
     
     ## Common CLI arguments
@@ -69,6 +71,35 @@ def parse_args():
     log.debug('Parsed arguments: {0}'.format(args))
 
     return args
+
+def get_waiting_time(args):
+    api_token = get_api_token(args)
+    url = get_base_url(args.hostname, args.customer_id)
+
+    r = requests.get(url)
+    r.raise_for_status()
+
+    json = r.json()
+    print(json)
+
+    # Estimated waiting time in seconds
+    estimated_waiting_time = json.estimatedWaitingTime
+    waiting_customers = json.numberOfWaitingChatRequests
+
+
+def get_api_token(args):
+    url = get_base_url(args.hostname, args.customer_id) + '/login'
+    payload = { 'apiKey': args.api_key }
+    r = requests.post(url, json=payload)
+    r.raise_for_status()
+
+    json = r.json()
+    return json['authToken']
+    
+
+def get_base_url(host_name, customer_id):
+    return 'https://{0}/api/v1/{1}'.format(host_name, customer_id)
+
 
 def gtfo(exitcode, message=''):
     """ Exit gracefully with exitcode and (optional) message """
