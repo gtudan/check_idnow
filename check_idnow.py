@@ -73,12 +73,14 @@ def parse_args():
     return args
 
 def get_waiting_time(args):
-    api_token = get_api_token(args)
-    url = get_base_url(args.hostname, args.customer_id)
+    try:
+        api_token = get_api_token(args)
+        url = get_base_url(args.hostname, args.customer_id)
 
-    r = requests.get(url)
-    if r.status_code != 200:
-        gtfo(2, "CRITICAL - ERROR: failed to get status")
+        r = requests.get(url)
+        r.raise_for_status()
+    except requests.exceptions.RequestException as err:
+        gtfo(3, "UNKNOWN - ERROR: failed to get status: %s" % err)
 
     json = r.json()
     log.debug(json)
@@ -86,21 +88,24 @@ def get_waiting_time(args):
     # Estimated waiting time in seconds
     estimated_waiting_time = json['estimatedWaitingTime']
     waiting_customers = json['numberOfWaitingChatRequests']
+
     msg = "Estimated waiting time is {0}. There are {1} people waiting.".format(
              estimated_waiting_time, waiting_customers)
+
+    perf_data = dict(estimated_waiting_time=estimated_waiting_time, waiting_customers=waiting_customers)
+
     if estimated_waiting_time < args.warn:
-        gtfo(0, "OK - " + msg)
+        gtfo(0, "OK - " + msg, perf_data)
     elif estimated_waiting_time >= args.crit:
-        gtfo(2, "CRITICAL - " + msg)
+        gtfo(2, "CRITICAL - " + msg, perf_data)
     else:
-        gtfo(1, "WARN - " + msg)
+        gtfo(1, "WARN - " + msg, perf_data)
 
 def get_api_token(args):
     url = get_base_url(args.hostname, args.customer_id) + '/login'
     payload = { 'apiKey': args.api_key }
     r = requests.post(url, json=payload)
-    if r.status_code != 200:
-        gtfo(2, "CRITICAL - ERROR: failed to log authenticate")
+    r.raise_for_status()
 
     json = r.json()
     return json['authToken']
@@ -110,13 +115,15 @@ def get_base_url(host_name, customer_id):
     return 'https://{0}/api/v1/{1}'.format(host_name, customer_id)
 
 
-def gtfo(exitcode, message=''):
+def gtfo(exitcode, message='', perf_data={}):
     """ Exit gracefully with exitcode and (optional) message """
 
     log.debug('Exiting with status {0}. Message: {1}'.format(exitcode, message))
+
+    perf_string = ''.join('{0}={1} '.format(key, val) for key, val in perf_data.items())
     
     if message:
-        print(message)
+        print("%s | %s" % (message, perf_string))
     exit(exitcode)
 
 if __name__ == '__main__':
