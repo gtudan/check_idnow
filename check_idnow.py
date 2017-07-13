@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 ###############################################################################
 # Nagios plugin template 
@@ -57,10 +57,10 @@ def parse_args():
             default='gateway.idnow.de', dest='hostname')
     
     ## Common CLI arguments
-    parser.add_argument('-c', '--critical', help='The critical waiting time in seconds. Default: (default)s',
-                      default=600, type=float, dest='crit', metavar='##')
+    parser.add_argument('-c', '--critical', help='The critical waiting time in seconds. Default: %(default)s',
+                      default=600, type=float, dest='crit', metavar='###')
     parser.add_argument('-w', '--warning', help='The threshold waiting time for a warning in seconds. Default: %(default)s',
-                      default=300, type=float, dest='warn', metavar='##')
+                      default=300, type=float, dest='warn', metavar='###')
     
 
     args = parser.parse_args()
@@ -89,7 +89,7 @@ def get_waiting_time(args):
     estimated_waiting_time = json['estimatedWaitingTime']
     waiting_customers = json['numberOfWaitingChatRequests']
 
-    msg = "Estimated waiting time is {0}. There are {1} people waiting.".format(
+    msg = "Estimated waiting time is {0} seconds. There are {1} people waiting.".format(
              estimated_waiting_time, waiting_customers)
 
     perf_data = dict(estimated_waiting_time=estimated_waiting_time, waiting_customers=waiting_customers)
