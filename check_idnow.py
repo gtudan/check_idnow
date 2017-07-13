@@ -57,10 +57,10 @@ def parse_args():
             default='gateway.idnow.de', dest='hostname')
     
     ## Common CLI arguments
-    parser.add_argument('-c', '--critical', help='Set the critical threshold. Default: %(default)s',
-                      default=97, type=float, dest='crit', metavar='##')
-    parser.add_argument('-w', '--warning', help='Set the warning threshold. Default: %(default)s',
-                      default=95, type=float, dest='warn', metavar='##')
+    parser.add_argument('-c', '--critical', help='The critical waiting time in seconds. Default: (default)s',
+                      default=600, type=float, dest='crit', metavar='##')
+    parser.add_argument('-w', '--warning', help='The threshold waiting time for a warning in seconds. Default: %(default)s',
+                      default=300, type=float, dest='warn', metavar='##')
     
 
     args = parser.parse_args()
@@ -77,21 +77,30 @@ def get_waiting_time(args):
     url = get_base_url(args.hostname, args.customer_id)
 
     r = requests.get(url)
-    r.raise_for_status()
+    if r.status_code != 200:
+        gtfo(2, "CRITICAL - ERROR: failed to get status")
 
     json = r.json()
-    print(json)
+    log.debug(json)
 
     # Estimated waiting time in seconds
-    estimated_waiting_time = json.estimatedWaitingTime
-    waiting_customers = json.numberOfWaitingChatRequests
-
+    estimated_waiting_time = json['estimatedWaitingTime']
+    waiting_customers = json['numberOfWaitingChatRequests']
+    msg = "Estimated waiting time is {0}. There are {1} people waiting.".format(
+             estimated_waiting_time, waiting_customers)
+    if estimated_waiting_time < args.warn:
+        gtfo(0, "OK - " + msg)
+    elif estimated_waiting_time >= args.crit:
+        gtfo(2, "CRITICAL - " + msg)
+    else:
+        gtfo(1, "WARN - " + msg)
 
 def get_api_token(args):
     url = get_base_url(args.hostname, args.customer_id) + '/login'
     payload = { 'apiKey': args.api_key }
     r = requests.post(url, json=payload)
-    r.raise_for_status()
+    if r.status_code != 200:
+        gtfo(2, "CRITICAL - ERROR: failed to log authenticate")
 
     json = r.json()
     return json['authToken']
