@@ -33,15 +33,15 @@ def main():
 def parse_args():
     """ Parse command-line arguments """
 
-    parser = ArgumentParser(usage='usage: %prog [-v|vv|vvv] [options]',
-                            epilog='{0}: v.{1} by {2}'.format('%prog', __version__, __author__))
+    parser = ArgumentParser(usage='usage: check_idnow.py [-v|vv|vvv] [options]',
+                            epilog='check_idnow v.%s by %s' % (__version__, __author__))
 
     # Verbosity (want this first, so it's right after --help and --version)
     parser.add_argument('-v', help='Set verbosity level',
                         action='count', default=0, dest='v')
 
     # CLI arguments specific to this script
-    group = parser.add_argument_group(parser, 'Plugin Options')
+    group = parser.add_argument_group('Plugin Options')
     group.add_argument('-i', '--customer-id', help='IDNow Customer id',
                        default=None, dest='customer_id')
     group.add_argument('-k', '--api-key', help='Your IDNow API key',
